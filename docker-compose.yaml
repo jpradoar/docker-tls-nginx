@@ -1,0 +1,31 @@
+version: "3"
+services:
+  certbot:
+    container_name: "certbot"
+    image: certbot/certbot:v3.0.1
+    command: sh -c "certbot certonly --webroot  -d %%DOMAIN%% --email %%EMAIL%% -w /tmp/acme-challenge/ --text --agree-tos --rsa-key-size 2048 --rsa-key-size 2048 --verbose --keep-until-expiring --preferred-challenges=http"
+    entrypoint: ""
+    volumes:
+      - ./letsencrypt:/etc/letsencrypt:rw
+      - /tmp/acme-challenge:/tmp/acme-challenge:rw
+    environment:
+      - TERM=xterm
+
+  nginx:
+    container_name: "nginx"
+    image: nginx:1.21.1-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/www:/usr/share/nginx/html
+      - ./letsencrypt:/etc/letsencrypt:ro
+      - /tmp/acme-challenge:/tmp/acme-challenge
+    networks:
+      - app
+    restart: always
+
+networks:
+  app:
+    driver: bridge
